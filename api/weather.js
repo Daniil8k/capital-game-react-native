@@ -5,7 +5,7 @@ export default function getWeather(cityName) {
 	)
 		.then((response) => response.json())
 		.then((data) => {
-			return data.current.temp_c;
+			return data?.current?.temp_c ?? "";
 		})
 		.catch((error) => {
 			console.log(error);

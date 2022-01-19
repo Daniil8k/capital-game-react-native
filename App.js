@@ -12,6 +12,7 @@ export default function App() {
 	let [successCount, setSuccessCount] = useState(0);
 	let [mistakeCount, setMistakeCount] = useState(0);
 	let [answers, setAnswers] = useState([]);
+	let [loading, setLoading] = useState(false);
 
 	let shuffle = (array) => {
 		let currentIndex = array.length,
@@ -55,10 +56,12 @@ export default function App() {
 		} else {
 			setMistakeCount((prev) => ++prev);
 		}
+		
 		setQuestionIndex((prev) => ++prev);
 	};
 
 	const generateQuestion = async () => {
+		setLoading(true)
 		let newAnswers = [];
 		let city = countryByCity[questionIndex].city;
 		newAnswers.push(await getAnswer(city));
@@ -68,14 +71,10 @@ export default function App() {
 		}
 
 		setAnswers(shuffle(newAnswers));
+		setLoading(false)
 	};
 
-	useEffect(() => setAnswers([]), [questionIndex]);
-	useEffect(() => {
-		if (!answers.length) {
-			generateQuestion();
-		}
-	}, [answers]);
+	useEffect(() => generateQuestion(), [questionIndex]);
 
 	useEffect(() => {
 		setAllCount(countryByCity.length);
@@ -108,7 +107,7 @@ export default function App() {
 					}}
 				/>
 				<View style={styles.btnContainer}>
-					{answers.map((answer, index) => {
+					{!loading ? answers.map((answer, index) => {
 						let isCold = answer.weather <= 0 ? true : false;
 						let prefix = isCold ? "-" : "+";
 
@@ -127,7 +126,7 @@ export default function App() {
 								</View>
 							</TouchableOpacity>
 						);
-					})}
+					}) : <Icon name="hourglass-bottom" color="black" />}
 				</View>
 			</View>
 		</View>
@@ -158,6 +157,7 @@ const styles = StyleSheet.create({
 	btnContainer: {
 		width: "100%",
 		alignItems: "center",
+		justifyContent: "center",
 		padding: 20,
 	},
 	btn: {
