@@ -3,7 +3,8 @@ import { StyleSheet, Text, View, Image, TouchableOpacity } from "react-native";
 import { Icon } from "react-native-elements";
 
 import Header from "./components/Header";
-import getWeather from "./api/weather";
+import getWeather from "./services/getWeather";
+import shuffle from "./utils/shuffle";
 let countryByCity = require("./assets/country_by_city.json");
 
 export default function App() {
@@ -12,26 +13,11 @@ export default function App() {
 	let [successCount, setSuccessCount] = useState(0);
 	let [mistakeCount, setMistakeCount] = useState(0);
 	let [answers, setAnswers] = useState([]);
-	let [loading, setLoading] = useState(false);
+	let [currentCountry, setCurrentCountry] = useState("");
 
-	let shuffle = (array) => {
-		let currentIndex = array.length,
-			randomIndex;
-
-		// While there remain elements to shuffle...
-		while (currentIndex != 0) {
-			// Pick a remaining element...
-			randomIndex = Math.floor(Math.random() * currentIndex);
-			currentIndex--;
-
-			// And swap it with the current element.
-			[array[currentIndex], array[randomIndex]] = [
-				array[randomIndex],
-				array[currentIndex],
-			];
-		}
-
-		return array;
+	const shuffleQuestions = () => {
+		shuffle(countryByCity);
+		nextQuestion();
 	};
 
 	const getRandomCity = () => {
@@ -48,33 +34,47 @@ export default function App() {
 		};
 	};
 
-	const nextQuestion = (city) => {
-		let rightCity = countryByCity[questionIndex].city;
+	const colorizeAnswers = (choosenCity, correctCity) => {
+		setAnswers(
+			answers.map((answer) => {
+				if (answer.city === correctCity) {
+					return { ...answer, isSuccess: true };
+				} else if (answer.city === choosenCity) {
+					return { ...answer, isMistake: true };
+				}
 
-		if (city === rightCity) {
+				return answer;
+			})
+		);
+	};
+
+	const nextQuestion = (choosenCity) => {
+		let correctCity = countryByCity[questionIndex].city;
+
+		if (choosenCity === correctCity) {
 			setSuccessCount((prev) => ++prev);
 		} else {
 			setMistakeCount((prev) => ++prev);
 		}
-		
+
+		colorizeAnswers(choosenCity, correctCity);
 		setQuestionIndex((prev) => ++prev);
 	};
 
 	const generateQuestion = async () => {
-		setLoading(true)
 		let newAnswers = [];
-		let city = countryByCity[questionIndex].city;
-		newAnswers.push(await getAnswer(city));
+		let question = countryByCity[questionIndex];
+		newAnswers.push(await getAnswer(question.city));
 
 		for (let i = 0; i < 3; i++) {
 			newAnswers.push(await getAnswer());
 		}
 
 		setAnswers(shuffle(newAnswers));
-		setLoading(false)
+		setCurrentCountry(question.country);
 	};
 
-	useEffect(() => generateQuestion(), [questionIndex]);
+	useEffect(generateQuestion, [questionIndex]);
 
 	useEffect(() => {
 		setAllCount(countryByCity.length);
@@ -89,44 +89,55 @@ export default function App() {
 				mistakeCount={mistakeCount}
 			/>
 			<View style={styles.content}>
-				<Text style={styles.question}>
-					What`s capital of
-					<Text style={styles.country}>
-						{` ${countryByCity[questionIndex].country} `}
-					</Text>
-					?
-				</Text>
+				{currentCountry ? (
+					<View style={styles.question}>
+						<TouchableOpacity onPress={() => shuffleQuestions()}>
+							<Icon name="refresh" color="black" />
+						</TouchableOpacity>
+						<Text style={styles.questionCountry}>
+							What`s capital of
+							<Text style={styles.country}>{` ${currentCountry} `}</Text>?
+						</Text>
+					</View>
+				) : (
+					<Text></Text>
+				)}
 				<Image
 					style={styles.flag}
 					source={{
-						uri:
-							"https://countryflagsapi.com/png/" +
-							(countryByCity[questionIndex]
-								? countryByCity[questionIndex].country
-								: ""),
+						uri: "https://countryflagsapi.com/png/" + currentCountry,
 					}}
 				/>
 				<View style={styles.btnContainer}>
-					{!loading ? answers.map((answer, index) => {
+					{answers.map((answer, index) => {
 						let isCold = answer.weather <= 0 ? true : false;
-						let prefix = isCold ? "-" : "+";
+						let prefix = isCold ? "" : "+";
 
 						return (
 							<TouchableOpacity
 								key={answer.city + index}
 								onPress={() => nextQuestion(answer.city)}
-								style={styles.btn}
+								style={[
+									styles.btn,
+									answer.isSuccess && styles.btnSuccess,
+									answer.isMistake && styles.btnMistake,
+								]}
 							>
 								<Text style={styles.btnText}>{answer?.city}</Text>
 								<View style={styles.right}>
-									<Text style={[{ ...styles.btnText, ...styles.weather }, isCold ? {'color': '#A3E1D4'} : {'color': '#9b2948'}]}>
+									<Text
+										style={[
+											{ ...styles.btnText, ...styles.weather },
+											isCold ? { color: "#A3E1D4" } : { color: "#9b2948" },
+										]}
+									>
 										{prefix + answer?.weather}
 									</Text>
 									<Icon name="location-city" color="black" />
 								</View>
 							</TouchableOpacity>
 						);
-					}) : <Icon name="hourglass-bottom" color="black" />}
+					})}
 				</View>
 			</View>
 		</View>
@@ -145,13 +156,15 @@ const styles = StyleSheet.create({
 		color: "green",
 	},
 	question: {
-		marginTop: 80,
+		marginTop: 40,
 		marginBottom: 40,
+	},
+	questionCountry: {
 		fontSize: 24,
 	},
 	flag: {
 		width: 200,
-		height: 120,
+		height: 140,
 		marginBottom: 20,
 	},
 	btnContainer: {
@@ -172,6 +185,12 @@ const styles = StyleSheet.create({
 		backgroundColor: "yellow",
 		marginBottom: 15,
 		elevation: 2,
+	},
+	btnSuccess: {
+		backgroundColor: "#90EE90",
+	},
+	btnMistake: {
+		backgroundColor: "red",
 	},
 	btnText: {
 		color: "black",

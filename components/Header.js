@@ -2,7 +2,6 @@ import React from "react";
 import { StyleSheet, View, Text } from "react-native";
 import { Header as HeaderRNE, Icon } from "react-native-elements";
 import { StatusBar } from "expo-status-bar";
-import { SafeAreaProvider } from "react-native-safe-area-context";
 
 export default function Header({ allCount, successCount, mistakeCount }) {
 	return (
