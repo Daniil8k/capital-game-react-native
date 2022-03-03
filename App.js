@@ -59,11 +59,15 @@ export default function App() {
 
 		colorizeAnswers(choosenCity, correctCity);
 		setQuestionIndex((prev) => ++prev);
+		setQuestionIndex((index) => {
+			generateQuestion(index)
+			return index
+		});
 	};
 
-	const generateQuestion = async () => {
+	const generateQuestion = async (index = questionIndex) => {
 		let newAnswers = [];
-		let question = countryByCity[questionIndex];
+		let question = countryByCity[index];
 		newAnswers.push(await getAnswer(question.city));
 
 		for (let i = 0; i < 3; i++) {
@@ -74,7 +78,7 @@ export default function App() {
 		setCurrentCountry(question.country);
 	};
 
-	useEffect(generateQuestion, [questionIndex]);
+	// useEffect(generateQuestion, [questionIndex]);
 
 	useEffect(() => {
 		setAllCount(countryByCity.length);
