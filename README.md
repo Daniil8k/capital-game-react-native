@@ -1,7 +1,7 @@
 # Capital-game-react-native
 
 React native game
-![description](https://user-images.githubusercontent.com/93822098/156565013-25261c3f-fffe-479b-9ac5-8b6ff7b97034.png)
+![description](https://user-images.githubusercontent.com/93822098/156565740-eb43d2bb-231e-4d88-b179-a9da60c4019f.png)
 
 ## Demo
 
